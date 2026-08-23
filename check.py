@@ -6,11 +6,16 @@ answer arrives in under a second, so nothing here filters or judges. It
 prints what the engine said, in the engine's own order, and stops.
 """
 
-from fixtures.runs import HONEST_RUN, TAMPERED_RUN, TRAVERSAL_RUN
+from fixtures.runs import (
+    HONEST_RUN,
+    RENAMED_INPUT_RUN,
+    TAMPERED_RUN,
+    TRAVERSAL_RUN,
+)
 from replay.engine import replay_trace
 
 
-RUNS = (HONEST_RUN, TAMPERED_RUN, TRAVERSAL_RUN)
+RUNS = (HONEST_RUN, TAMPERED_RUN, TRAVERSAL_RUN, RENAMED_INPUT_RUN)
 
 
 for trace in RUNS:

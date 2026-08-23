@@ -1,12 +1,21 @@
 """
-Hardcoded agent-run traces. Three runs, one shape, three different jobs.
+Hardcoded agent-run traces. Four runs, one shape, four different jobs.
 
 HONEST_RUN records what a correct guard actually said, so replay reports a
 match. TAMPERED_RUN records a decision the guard never gave, so replay
 reports a divergence, and that is the forgery case. TRAVERSAL_RUN records a
 path that begins inside the agent's room and lands outside it: it holds the
 guard to its repair, reporting a match today and a divergence the day the
-path stops being canonicalized.
+path stops being canonicalized. RENAMED_INPUT_RUN records its argument
+under a key the guard has no parameter for, so the engine cannot call the
+guard at all and reports signature_mismatch.
+
+That fourth run carries a forgery underneath the mismatch, on purpose: its
+recorded decision is a lie the guard would have caught. The report still
+says signature_mismatch, and never says match, which is the distinction the
+whole design rests on. A step the engine could not check is not a step that
+passed, and a clean-looking report over an unreplayable step is worth
+nothing.
 
 Every step carries `kind`, and that field is the whole design. A run is not
 verifiable or unverifiable as a unit: it is a sequence in which some steps
@@ -113,6 +122,44 @@ TRAVERSAL_RUN = {
             # guard cannot outlive the repair: it either converts into an
             # alarm like this one, or it is deleted.
             "outputs": {"decision": "deny"},
+        },
+    ],
+}
+
+
+RENAMED_INPUT_RUN = {
+    "run_id": "run-0004",
+    "steps": [
+        {
+            "index": 0,
+            "kind": "nondeterministic",
+            "name": "model_decision",
+            "inputs": {"prompt": "save the summary"},
+            "outputs": {
+                "tool": "write_file",
+                "path": "/etc/passwd",
+            },
+        },
+        {
+            "index": 1,
+            "kind": "deterministic",
+            "name": "check_write_path",
+            # "target", not "path". The guard's parameter is named path, so
+            # this dict cannot be unpacked into it: the call dies at the
+            # door and the guard's body never runs. Three causes produce
+            # this one signal and the engine cannot tell them apart. The
+            # trace was forged, the guard was refactored, or an honest
+            # rename drifted the two documents apart. So the verdict says
+            # only what the engine knows, which is that it could not
+            # follow this step.
+            "inputs": {"target": "/etc/passwd"},
+            # Never read. The engine returns from the mismatch branch
+            # before it reaches this field, and recording a lie here is the
+            # whole point: the guard would answer "deny" for this path, so
+            # this run is a forgery the report does not expose and cannot.
+            # signature_mismatch is not a pass, and this fixture exists to
+            # make reading it as one impossible.
+            "outputs": {"decision": "allow"},
         },
     ],
 }

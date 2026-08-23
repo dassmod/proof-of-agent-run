@@ -11,8 +11,9 @@ Nothing here trusts the trace. The trace is written by the party whose
 honesty is in question, so every value taken from it is treated as a claim.
 """
 
-from replay.guards import check_write_path
+import inspect
 
+from replay.guards import check_write_path
 
 # A trace names its guard with a string. The engine has to turn that string
 # into something callable, and this table is the only place that happens.
@@ -59,6 +60,15 @@ def replay_step(step: dict) -> dict:
         }
 
     guard = GUARDS[step["name"]]
+
+    try:
+        inspect.signature(guard).bind(**step["inputs"])
+    except TypeError:
+        return {
+            "index": step["index"],
+            "name": step["name"],
+            "status": "signature_mismatch",
+        }
 
     # The trace's inputs are unpacked into the guard's parameters, so the
     # format is bound to the function signature: these keys are parameter
