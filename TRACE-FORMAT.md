@@ -94,6 +94,17 @@ the engine cannot check erases the report for every step it could have.
 The engine's failure to speak about one step must not become a failure to
 speak about the others.
 
+**This rule is currently unmet by the engine described here.** A recorded
+value of the wrong type passes the signature gate, because `bind` compares
+the keys of `inputs` against the guard's parameter names and never looks at
+what those keys hold. The guard then runs, and the wrong type raises
+`TypeError` inside the guard's own body. Neither `replay_step` nor
+`replay_trace` wraps that call in a `try`, so the exception leaves both
+functions. `results` is local to `replay_trace` and a raising function
+returns nothing, so the verdicts already computed are discarded, every step
+after the failing one is never checked at all, and the caller receives a
+traceback where the report should be.
+
 **And the fix must not swallow more than it means to.** Wrapping the guard
 call in `try/except TypeError` would also catch a `TypeError` raised inside
 a guard's body, which is a real bug in this repo's own code, and would
