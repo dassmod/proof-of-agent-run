@@ -11,11 +11,12 @@ from fixtures.runs import (
     RENAMED_INPUT_RUN,
     TAMPERED_RUN,
     TRAVERSAL_RUN,
+    BAD_TYPE_RUN
 )
 from replay.engine import replay_trace
 
 
-RUNS = (HONEST_RUN, TAMPERED_RUN, TRAVERSAL_RUN, RENAMED_INPUT_RUN)
+RUNS = (HONEST_RUN, TAMPERED_RUN, TRAVERSAL_RUN, RENAMED_INPUT_RUN, BAD_TYPE_RUN)
 
 
 for trace in RUNS:

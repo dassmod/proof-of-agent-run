@@ -1,5 +1,5 @@
 """
-Hardcoded agent-run traces. Four runs, one shape, four different jobs.
+Hardcoded agent-run traces. Five runs, one shape, five different jobs.
 
 HONEST_RUN records what a correct guard actually said, so replay reports a
 match. TAMPERED_RUN records a decision the guard never gave, so replay
@@ -8,7 +8,10 @@ path that begins inside the agent's room and lands outside it: it holds the
 guard to its repair, reporting a match today and a divergence the day the
 path stops being canonicalized. RENAMED_INPUT_RUN records its argument
 under a key the guard has no parameter for, so the engine cannot call the
-guard at all and reports signature_mismatch.
+guard at all and reports signature_mismatch. BAD_TYPE_RUN records a path
+that is not a string at all, so it demonstrates the one rule this engine
+still breaks: it passes the signature gate, raises inside the guard's own
+body, and destroys the report for the entire run.
 
 That fourth run carries a forgery underneath the mismatch, on purpose: its
 recorded decision is a lie the guard would have caught. The report still
@@ -159,6 +162,52 @@ RENAMED_INPUT_RUN = {
             # this run is a forgery the report does not expose and cannot.
             # signature_mismatch is not a pass, and this fixture exists to
             # make reading it as one impossible.
+            "outputs": {"decision": "allow"},
+        },
+    ],
+}
+
+
+BAD_TYPE_RUN = {
+    "run_id": "run-0005",
+    "steps": [
+        {
+            "index": 0,
+            "kind": "nondeterministic",
+            "name": "model_decision",
+            "inputs": {"prompt": "save the summary"},
+            "outputs": {
+                "tool": "write_file",
+                "path": "/etc/passwd",
+            },
+        },
+        {
+            "index": 1,
+            "kind": "deterministic",
+            "name": "check_write_path",
+            # The wrong type, and the signature gate cannot see it. bind
+            # matches the key "path" against the parameter named path and
+            # never looks at what that key holds, so this step passes the
+            # gate, the guard is called, and normpath raises TypeError
+            # inside the guard's own body. Nothing catches it there.
+            #
+            # The damage is not local to this step. The exception leaves
+            # replay_step, leaves replay_trace, and takes `results` with
+            # it, so every verdict already computed for this run is
+            # discarded and every step after this one is never checked.
+            # Put this run second in check.py's RUNS and the three honest
+            # runs behind it print nothing at all.
+            #
+            # This is the fixture for TRACE-FORMAT.md clause 3's "a crash
+            # is not a verdict", which that document states as a rule the
+            # engine described there does not meet. It is the only run
+            # here that produces no verdicts, and it stays until the
+            # containment lands and gives this case a status of its own.
+            "inputs": {"path": 5},
+            # Never read. The crash happens one line before the
+            # comparison, so this run cannot report divergence however
+            # the decision is recorded. It is here to keep the step a
+            # complete step.
             "outputs": {"decision": "allow"},
         },
     ],
