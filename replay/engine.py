@@ -61,8 +61,11 @@ def replay_step(step: dict) -> dict:
 
     guard = GUARDS[step["name"]]
 
+    # A non-callable GUARDS entry is a defect in this engine
+    # so it raises here and is deliberately not caught.
+    signature = inspect.signature(guard)
     try:
-        inspect.signature(guard).bind(**step["inputs"])
+        signature.bind(**step["inputs"])
     except TypeError:
         return {
             "index": step["index"],
